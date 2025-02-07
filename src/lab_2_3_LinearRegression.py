@@ -36,8 +36,17 @@ class LinearRegressor:
             X = X.reshape(1, -1)
 
         # TODO: Train linear regression model with only one coefficient
-        self.coefficients = None
-        self.intercept = None
+
+        # si tenemos dos vectores X e Y , entonces la regresión lineal y = mx + b ; 
+        # donde, por la teoría, sabemos que : 
+        # w = Sxy / (Sx)^2 
+        # covarianza = (sumatorio (xi - media_x) * yi - media_y)/ N
+        # varianza = Sx^2 = sumatorio ( xi   - media_x)^2  / N
+        # se irán las N al dividirse entre sí 
+        N  = len(X)
+
+        self.coefficients =  np.sum ((X - np.mean(X)) * (y- np.mean(y))) / np.sum((X - np.mean(X)) ** 2 )
+        self.intercept = np.mean(y) - self.coefficients * np.mean(X)
 
     # This part of the model you will only need for the last part of the notebook
     def fit_multiple(self, X, y):
@@ -55,8 +64,25 @@ class LinearRegressor:
             None: Modifies the model's coefficients and intercept in-place.
         """
         # TODO: Train linear regression model with multiple coefficients
-        self.intercept = None
-        self.coefficients = None
+
+        # ahora, tenemos que operar con matrices. sabemos, por la teoria, que 
+        # y = bo + b1 x1 + b2 x2 + ... + bn xn 
+        # w = (Xt * X)^(-1) * Xt * y 
+        # donde bo será el primer término de w 
+
+        # añadimos una fila de unos a X
+        fila_unos = np.ones((X.shape[0], 1)) 
+        X_completa = np.hstack((fila_unos, X))
+        #y_completa = np.append(1, y)
+        #calculamso el verctor w = (bo, b1, b2, ...)
+
+        Xt_X_inv =  np.linalg.inv(np.dot(np.transpose(X_completa), X_completa))
+        Xt_X_inv_Xt = np.dot (Xt_X_inv , np.transpose(X_completa))
+        resultados  = np.dot (Xt_X_inv_Xt, y)
+        #tomamos los coeficientes (b1, .., bn)
+        self.coefficients = resultados[1:]
+        # tomamos el bo como el intercept 
+        self.intercept = resultados[0]
 
     def predict(self, X):
         """
@@ -76,10 +102,16 @@ class LinearRegressor:
 
         if np.ndim(X) == 1:
             # TODO: Predict when X is only one variable
-            predictions = None
+            # y = wx + b 
+            
+            predictions = self.coefficients * X + self.intercept
         else:
             # TODO: Predict when X is more than one variable
-            predictions = None
+            predictions = self.intercept 
+            producto = self.coefficients * X
+            predictions += producto.sum(axis = 1 )
+
+            
         return predictions
 
 
@@ -96,15 +128,22 @@ def evaluate_regression(y_true, y_pred):
     """
     # R^2 Score
     # TODO: Calculate R^2
-    r_squared = None
+
+    # R^2 = 1 - RSS/TSS 
+
+    RSS = np.sum((y_true-y_pred)**2)
+    TSS = np.sum((y_true - np.mean(y_true))**2)
+    r_squared = 1 - (RSS/TSS)
 
     # Root Mean Squared Error
-    # TODO: Calculate RMSE
-    rmse = None
+    # TODO: Calculate RMSE -> raiz_cuadrada ( sumatorio ( y_real - y_pred)**2 )
+    N = len(y_true)
+
+    rmse = np.sqrt(np.sum((y_true - y_pred)**2)/N) 
 
     # Mean Absolute Error
     # TODO: Calculate MAE
-    mae = None
+    mae = np.sum(abs(y_true - y_pred))/N
 
     return {"R2": r_squared, "RMSE": rmse, "MAE": mae}
 
