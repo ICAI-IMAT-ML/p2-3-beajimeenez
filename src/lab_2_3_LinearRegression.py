@@ -43,11 +43,22 @@ class LinearRegressor:
         # covarianza = (sumatorio (xi - media_x) * yi - media_y)/ N
         # varianza = Sx^2 = sumatorio ( xi   - media_x)^2  / N
         # se irán las N al dividirse entre sí 
-    
-        self.coefficients =  np.sum ((X - np.mean(X)) * (y- np.mean(y))) / np.sum((X - np.mean(X)) ** 2 )
-        self.intercept = np.mean(y) - self.coefficients * np.mean(X)
+        media_x = np.mean(X)
+        media_y = np.mean(y)
+        
+        cov_XY = np.sum((X - media_x) * (y - media_y))
+        var_X = np.sum((X - media_x) ** 2)
+
+        # calculamos: 
+        # w = Sxy / (Sx)^2 
+
+        self.coefficients = cov_XY / var_X
+
+        #b = media_y - w * media_x 
+        self.intercept = media_y - self.coefficients * media_x
 
     # This part of the model you will only need for the last part of the notebook
+
     def fit_multiple(self, X, y):
         """
         Fit the model using multiple linear regression (more than one independent variable).
@@ -83,7 +94,7 @@ class LinearRegressor:
         # tomamos el bo como el intercept 
         self.intercept = resultados[0]
 
-    def predict(self, X):
+    def predict(self, X): 
         """
         Predict the dependent variable values using the fitted model.
 
@@ -96,22 +107,37 @@ class LinearRegressor:
         Raises:
             ValueError: If the model is not yet fitted.
         """
+
+       
         if self.coefficients is None or self.intercept is None:
             raise ValueError("Model is not yet fitted")
-
+        X = np.asarray(X)
+        w = self.coefficients
+        b = self.intercept
         if np.ndim(X) == 1:
             # TODO: Predict when X is only one variable
             # y = wx + b 
-            
-            predictions = self.coefficients * X + self.intercept
-        else:
-            # TODO: Predict when X is more than one variable
-            predictions = self.intercept 
-            producto = self.coefficients * X
-            predictions += producto.sum(axis = 1 )
 
+            # x lo convertimos en un array de 2D con una columna 
+            X = X.reshape(-1, 1)
+
+            # si w es un solo numero, lo convertios en un array: 
+            if w.ndim == 0:
+                w = np.array([w])
+
+        else: 
+       
+            # TODO: Predict when X is more than one variable 
+            # calculamos y = b + x * w cuando X es una matriz 2D 
+            # convertimos la w en una matriz para poder hacer el calculo. 
+
+            w = np.asarray(w)
+            if w.ndim == 1:
+                w = w.reshape(-1, 1)
             
-        return predictions
+        predictions =  b + X @ w
+
+        return predictions.flatten()
 
 
 def evaluate_regression(y_true, y_pred):
@@ -179,7 +205,6 @@ def sklearn_comparison(x, y, linreg):
 
     # Create and train the scikit-learn model
     # TODO : Train the LinearRegression model
-
 
 
     sklearn_model = LinearRegression()
